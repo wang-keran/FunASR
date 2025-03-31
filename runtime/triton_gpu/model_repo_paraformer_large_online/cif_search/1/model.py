@@ -230,6 +230,9 @@ class TritonPythonModel:
                     self.start[corrid] = 0
                 else:
                     flag = 0
+                print(f"corrid: {corrid}, type: {type(corrid)}, value: {corrid}")
+                corrid= int(corrid)
+                print(f"corrid: {corrid}, type: {type(corrid)}, value: {corrid}")
                 inference_request = pb_utils.InferenceRequest(
                     model_name="decoder",
                     requested_output_names=["sample_ids"],

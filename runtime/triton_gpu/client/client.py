@@ -37,14 +37,14 @@ if __name__ == "__main__":
         "--url",
         type=str,
         required=False,
-        default="localhost:10086",
+        default="localhost:8001",
         help="Inference server URL. Default is " "localhost:8001.",
     )
     parser.add_argument(
         "--model_name",
         required=False,
         default="attention_rescoring",
-        choices=["attention_rescoring", "streaming_wenet", "infer_pipeline"],
+        choices=["attention_rescoring", "streaming_wenet", "infer_pipeline","streaming_paraformer"],
         help="the model to send request to",
     )
     parser.add_argument(
@@ -161,6 +161,8 @@ if __name__ == "__main__":
             url=FLAGS.url, verbose=FLAGS.verbose
         ) as triton_client:
             protocol_client = grpcclient
+            triton_client.load_model("decoder")
+            triton_client.load_model(FLAGS.model_name)
             speech_client = speech_client_cls(
                 triton_client, FLAGS.model_name, protocol_client, FLAGS
             )

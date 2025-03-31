@@ -74,6 +74,6 @@ parameters { key: "cudnn_conv_algo_search" value: { string_value: "2" } }
 instance_group [
     {
       count: 1
-      kind: KIND_GPU
+      kind: KIND_CPU    # KIND_GPU
     }
 ]
