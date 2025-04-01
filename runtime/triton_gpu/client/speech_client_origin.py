@@ -12,27 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tritonclient.utils import np_to_triton_dtype, InferenceServerException
+from tritonclient.utils import np_to_triton_dtype
 import numpy as np
 import math
 import soundfile as sf
-import time
 
-total_audio_time = 0
-total_asr_time = 0
 
 class OfflineSpeechClient(object):
-
     def __init__(self, triton_client, model_name, protocol_client, args):
         self.triton_client = triton_client
         self.protocol_client = protocol_client
         self.model_name = model_name
 
     def recognize(self, wav_file, idx=0):
-        global total_audio_time, total_asr_time
         waveform, sample_rate = sf.read(wav_file)
-        audio_duration = len(waveform) / sample_rate  # 计算音频时长
-        start_time = time.time()  # 记录开始时间
         samples = np.array([waveform], dtype=np.float32)
         lengths = np.array([[len(waveform)]], dtype=np.int32)
         # better pad waveform to nearest length here
@@ -43,40 +36,27 @@ class OfflineSpeechClient(object):
         sequence_id = 10086 + idx
         result = ""
         inputs = [
-            self.protocol_client.InferInput("WAV", samples.shape,
-                                            np_to_triton_dtype(samples.dtype)),
-            self.protocol_client.InferInput("WAV_LENS", lengths.shape,
-                                            np_to_triton_dtype(lengths.dtype)),
+            self.protocol_client.InferInput(
+                "WAV", samples.shape, np_to_triton_dtype(samples.dtype)
+            ),
+            self.protocol_client.InferInput(
+                "WAV_LENS", lengths.shape, np_to_triton_dtype(lengths.dtype)
+            ),
         ]
         inputs[0].set_data_from_numpy(samples)
         inputs[1].set_data_from_numpy(lengths)
-        
         outputs = [self.protocol_client.InferRequestedOutput("TRANSCRIPTS")]
-        try:
-            response = self.triton_client.infer(
-                self.model_name,
-                inputs,
-                request_id=str(sequence_id),
-                outputs=outputs,
-            )
-        except InferenceServerException as e:
-            print(f"Triton Error: {e.__dict__}")
-        decoding_results = response.as_numpy("TRANSCRIPTS")[0]
-        if type(decoding_results) == np.ndarray:
-            result = b" ".join(decoding_results).decode("utf-8")
-        else:
-            result = decoding_results.decode("utf-8")
-        end_time = time.time()  # 记录结束时间
-        elapsed_time = end_time - start_time  # 计算语音识别耗时时长
-        print(f"音频 {idx} 总时长: {audio_duration} 秒, 语音识别耗时时长: {elapsed_time} 秒")
-        total_audio_time += audio_duration
-        total_asr_time += elapsed_time
-        print(f"累计总音频时长: {total_audio_time} 秒, 累计语音识别耗时时长: {total_asr_time} 秒")
+        response = self.triton_client.infer(
+            self.model_name,
+            inputs,
+            request_id=str(sequence_id),
+            outputs=outputs,
+        )
+        result = response.as_numpy("TRANSCRIPTS")[0].decode("utf-8")
         return [result]
 
 
 class StreamingSpeechClient(object):
-
     def __init__(self, triton_client, model_name, protocol_client, args):
         self.triton_client = triton_client
         self.protocol_client = protocol_client
@@ -91,28 +71,23 @@ class StreamingSpeechClient(object):
         # the exact first chunk length frames
         # since the subsampling will look ahead several frames
         first_chunk_length = (chunk_size - 1) * subsampling + context
-        add_frames = math.ceil(
-            (frame_length_ms - frame_shift_ms) / frame_shift_ms)
+        add_frames = math.ceil((frame_length_ms - frame_shift_ms) / frame_shift_ms)
         first_chunk_ms = (first_chunk_length + add_frames) * frame_shift_ms
         other_chunk_ms = chunk_size * subsampling * frame_shift_ms
         self.first_chunk_in_secs = first_chunk_ms / 1000
         self.other_chunk_in_secs = other_chunk_ms / 1000
 
     def recognize(self, wav_file, idx=0):
-        global total_audio_time, total_asr_time
         waveform, sample_rate = sf.read(wav_file)
-        audio_duration = len(waveform) / sample_rate  # 计算音频时长
-        start_time = time.time()  # 记录开始时间
         wav_segs = []
-        results=[]
         i = 0
         while i < len(waveform):
             if i == 0:
                 stride = int(self.first_chunk_in_secs * sample_rate)
-                wav_segs.append(waveform[i:i + stride])
+                wav_segs.append(waveform[i : i + stride])
             else:
                 stride = int(self.other_chunk_in_secs * sample_rate)
-                wav_segs.append(waveform[i:i + stride])
+                wav_segs.append(waveform[i : i + stride])
             i += len(wav_segs[-1])
 
         sequence_id = idx + 10086
@@ -145,34 +120,21 @@ class StreamingSpeechClient(object):
 
             inputs[0].set_data_from_numpy(input0_data)
             inputs[1].set_data_from_numpy(input1_data)
-           
-            outputs = [
-                self.protocol_client.InferRequestedOutput("TRANSCRIPTS")
-            ]
+
+            outputs = [self.protocol_client.InferRequestedOutput("TRANSCRIPTS")]
             end = False
             if idx == len(wav_segs) - 1:
                 end = True
 
-            try:
-                response = self.triton_client.infer(
-                    self.model_name,
-                    inputs,
-                    outputs=outputs,
-                    sequence_id=sequence_id,
-                    sequence_start=idx == 0,
-                    sequence_end=end,
-                )
-            except InferenceServerException as e:
-                print(f"Triton Error: {e.__dict__}")
+            response = self.triton_client.infer(
+                self.model_name,
+                inputs,
+                outputs=outputs,
+                sequence_id=sequence_id,
+                sequence_start=idx == 0,
+                sequence_end=end,
+            )
             idx += 1
             result = response.as_numpy("TRANSCRIPTS")[0].decode("utf-8")
             print("Get response from {}th chunk: {}".format(idx, result))
-            results.append(result)
-        full_result = "".join(results)  
-        end_time = time.time()  # 记录结束时间
-        elapsed_time = end_time - start_time  # 计算语音识别耗时时长
-        print(f"音频 {sequence_id} 总时长: {audio_duration} 秒, 语音识别耗时时长: {elapsed_time} 秒")
-        total_audio_time += audio_duration
-        total_asr_time += elapsed_time
-        print(f"累计总音频时长: {total_audio_time} 秒, 累计语音识别耗时时长: {total_asr_time} 秒")
-        return [full_result]
+        return [result]

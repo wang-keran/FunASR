@@ -38,14 +38,13 @@ if __name__ == "__main__":
         type=str,
         required=False,
         default="localhost:8001",
-        help="Inference server URL. Default is "
-        "localhost:8001.",
+        help="Inference server URL. Default is " "localhost:8001.",
     )
     parser.add_argument(
         "--model_name",
         required=False,
         default="attention_rescoring",
-        choices=["attention_rescoring", "streaming_wenet", "infer_pipeline", "sensevoice","streaming_paraformer"],
+        choices=["attention_rescoring", "streaming_wenet", "infer_pipeline","streaming_paraformer"],
         help="the model to send request to",
     )
     parser.add_argument(
@@ -123,6 +122,7 @@ if __name__ == "__main__":
     )
 
     FLAGS = parser.parse_args()
+    print(FLAGS)
 
     # load data
     filenames = []
@@ -137,33 +137,19 @@ if __name__ == "__main__":
         audio_data = {}
         with open(FLAGS.wavscp, "r", encoding="utf-8") as f:
             for line in f:
-                path, trans = line.strip().split(",")
+                aid, path = line.strip().split("\t")
                 if FLAGS.data_dir:
                     path = os.path.join(FLAGS.data_dir, path)
-                # print(path, trans)
-                filenames.append(path)
-                transcripts.append(trans)
+                audio_data[aid] = {"path": path}
+        with open(FLAGS.trans, "r", encoding="utf-8") as f:
+            for line in f:
+                aid, text = line.strip().split("\t")
+                audio_data[aid]["text"] = text
+        for key, value in audio_data.items():
+            filenames.append(value["path"])
+            transcripts.append(value["text"])
 
-
-        # with open(FLAGS.wavscp, "r", encoding="utf-8") as f:
-        #     for line in f:
-        #         print(line)
-        #         aid, path = line.strip().split("\t")
-        #         if FLAGS.data_dir:
-        #             path = os.path.join(FLAGS.data_dir, path)
-        #         audio_data[aid] = {"path": path}
-        # with open(FLAGS.trans, "r", encoding="utf-8") as f:
-        #     for line in f:
-        #         aid, text = line.strip().split("\t")
-        #         audio_data[aid]["text"] = text
-        # for key, value in audio_data.items():
-        #     filenames.append(value["path"])
-        #     transcripts.append(value["text"])
-
-
-
-    # num_workers = multiprocessing.cpu_count() // 2
-    num_workers = 1
+    num_workers = multiprocessing.cpu_count() // 2
 
     if FLAGS.streaming:
         speech_client_cls = StreamingSpeechClient
@@ -172,14 +158,15 @@ if __name__ == "__main__":
 
     def single_job(client_files):
         with grpcclient.InferenceServerClient(
-                url=FLAGS.url, verbose=FLAGS.verbose) as triton_client:
+            url=FLAGS.url, verbose=FLAGS.verbose
+        ) as triton_client:
             protocol_client = grpcclient
-            triton_client.load_model("decoder")
+            triton_client.load_model("decoder")                 #只要使用了一次，把模型加载起来后就不需要这两个load_model了
             triton_client.load_model(FLAGS.model_name)
-            speech_client = speech_client_cls(triton_client, FLAGS.model_name,
-                                              protocol_client, FLAGS)
+            speech_client = speech_client_cls(
+                triton_client, FLAGS.model_name, protocol_client, FLAGS
+            )
             idx, audio_files = client_files
-            # print("client_files: ", client_files)
             predictions = []
             for li in audio_files:
                 result = speech_client.recognize(li, idx)
@@ -201,7 +188,7 @@ if __name__ == "__main__":
         predictions = pool.map(single_job, tasks)
 
     predictions = [item for sublist in predictions for item in sublist]
-    #print("predictions is: {}",predictions)
+    print("predictions :",predictions)
     if transcripts:
         cer = cal_cer(predictions, transcripts)
         print("CER is: {}".format(cer))
