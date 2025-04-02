@@ -115,7 +115,7 @@ class AutoModel:
         try:
             from funasr.utils.version_checker import check_for_update
 
-            check_for_update(disable=kwargs.get("disable_update", False))
+            check_for_update(disable=kwargs.get("disable_update", True))       #False,True
         except:
             pass
 

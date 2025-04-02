@@ -21,8 +21,8 @@ parser.add_argument(
     "--host", type=str, default="localhost", required=False, help="host ip, localhost, 0.0.0.0"
 )
 parser.add_argument("--port", type=int, default=10095, required=False, help="grpc server port")
-parser.add_argument("--chunk_size", type=str, default="5, 10, 5", help="chunk")
-parser.add_argument("--encoder_chunk_look_back", type=int, default=4, help="chunk")
+parser.add_argument("--chunk_size", type=str, default="5, 10, 5", help="chunk")     #初始块大小，普通块大小，重叠块大小
+parser.add_argument("--encoder_chunk_look_back", type=int, default=4, help="chunk")   #编码器依赖4块
 parser.add_argument("--decoder_chunk_look_back", type=int, default=0, help="chunk")
 parser.add_argument("--chunk_interval", type=int, default=10, help="chunk")
 parser.add_argument(
@@ -43,7 +43,7 @@ parser.add_argument("--thread_num", type=int, default=1, help="thread_num")
 parser.add_argument("--words_max_print", type=int, default=10000, help="chunk")
 parser.add_argument("--output_dir", type=str, default=None, help="output_dir")
 parser.add_argument("--ssl", type=int, default=1, help="1 for ssl connect, 0 for no ssl")
-parser.add_argument("--use_itn", type=int, default=1, help="1 for using itn, 0 for not itn")
+parser.add_argument("--use_itn", type=int, default=1, help="1 for using itn, 0 for not itn")    #标准化处理
 parser.add_argument("--mode", type=str, default="2pass", help="offline, online, 2pass")
 
 args = parser.parse_args()
@@ -68,17 +68,17 @@ async def record_microphone():
     import pyaudio
 
     # print("2")
-    global voices
+    global voices   #全局变量，存储音频数据的一个队列
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
     chunk_size = 60 * args.chunk_size[1] / args.chunk_interval
     CHUNK = int(RATE / 1000 * chunk_size)
 
-    p = pyaudio.PyAudio()
+    p = pyaudio.PyAudio()   #初始化pyaudio类来读取话筒音
 
     stream = p.open(
-        format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK
+        format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK        #input=True,指定为输入流，未指定就是输出流
     )
     # hotwords
     fst_dict = {}
@@ -100,7 +100,7 @@ async def record_microphone():
         else:
             hotword_msg = args.hotword
 
-    use_itn = True
+    use_itn = True  #设置校验
     if args.use_itn == 0:
         use_itn = False
 
@@ -112,7 +112,7 @@ async def record_microphone():
             "encoder_chunk_look_back": args.encoder_chunk_look_back,
             "decoder_chunk_look_back": args.decoder_chunk_look_back,
             "wav_name": "microphone",
-            "is_speaking": True,
+            "is_speaking": True,        #一直在说话记录的意思
             "hotwords": hotword_msg,
             "itn": use_itn,
         }
@@ -166,11 +166,11 @@ async def record_from_scp(chunk_begin, chunk_size):
     if chunk_size > 0:
         wavs = wavs[chunk_begin : chunk_begin + chunk_size]
     for wav in wavs:
-        wav_splits = wav.strip().split()
+        wav_splits = wav.strip().split()    #提取wav文件名
 
         wav_name = wav_splits[0] if len(wav_splits) > 1 else "demo"
         wav_path = wav_splits[1] if len(wav_splits) > 1 else wav_splits[0]
-        if not len(wav_path.strip()) > 0:
+        if not len(wav_path.strip()) > 0:   #wav文件路径为空接着读，后面按照单独的格式读取
             continue
         if wav_path.endswith(".pcm"):
             with open(wav_path, "rb") as f:
@@ -192,7 +192,7 @@ async def record_from_scp(chunk_begin, chunk_size):
         chunk_num = (len(audio_bytes) - 1) // stride + 1
         # print(stride)
 
-        # send first time
+        # send first time 构造信息
         message = json.dumps(
             {
                 "mode": args.mode,
@@ -209,7 +209,7 @@ async def record_from_scp(chunk_begin, chunk_size):
             }
         )
 
-        # voices.put(message)
+        # voices.put(message)发送
         await websocket.send(message)
         is_speaking = True
         for i in range(chunk_num):
@@ -217,27 +217,27 @@ async def record_from_scp(chunk_begin, chunk_size):
             beg = i * stride
             data = audio_bytes[beg : beg + stride]
             message = data
-            # voices.put(message)
+            # voices.put(message)循环发送
             await websocket.send(message)
-            if i == chunk_num - 1:
+            if i == chunk_num - 1:  #表示语音流结束，发送个false信息
                 is_speaking = False
                 message = json.dumps({"is_speaking": is_speaking})
                 # voices.put(message)
                 await websocket.send(message)
 
             sleep_duration = (
-                0.001
+                0.001   #非流式0.001秒休眠，每次发送一块的时间间隔是0.001秒，实时性较差
                 if args.mode == "offline"
-                else 60 * args.chunk_size[1] / args.chunk_interval / 1000
+                else 60 * args.chunk_size[1] / args.chunk_interval / 1000   #其他的按照参数计算，流式的实时性较好但是识别效果较差
             )
 
-            await asyncio.sleep(sleep_duration)
+            await asyncio.sleep(sleep_duration)         #休眠时间
 
     if not args.mode == "offline":
         await asyncio.sleep(2)
-    # offline model need to wait for message recved
+    # offline model need to wait for message recved如果是流式的就等两秒等服务端处理结束
 
-    if args.mode == "offline":
+    if args.mode == "offline":  #如果是非流式模型，就一直检查offline_msg_done看看是否完成，如果没完成就循环等待1秒
         global offline_msg_done
         while not offline_msg_done:
             await asyncio.sleep(1)
@@ -259,6 +259,7 @@ async def message(id):
     try:
         while True:
 
+            # 接受服务端信息
             meg = await websocket.recv()
             meg = json.loads(meg)
             wav_name = meg.get("wav_name", "demo")
@@ -281,7 +282,7 @@ async def message(id):
                 text_print += "{}".format(text)
                 text_print = text_print[-args.words_max_print :]
                 os.system("clear")
-                print("\rpid" + str(id) + ": " + text_print)
+                print("\rpid" + str(id) + ": " + text_print)    #打印从服务端接受的信息
             elif meg["mode"] == "offline":
                 if timestamp != "":
                     text_print += "{} timestamp: {}".format(text, timestamp)
@@ -311,6 +312,7 @@ async def message(id):
         # await websocket.close()
 
 
+#客户端代码，调用了上面的record_microphone，message等函数
 async def ws_client(id, chunk_begin, chunk_size):
     if args.audio_in is None:
         chunk_begin = 0
@@ -335,10 +337,10 @@ async def ws_client(id, chunk_begin, chunk_size):
             if args.audio_in is not None:
                 task = asyncio.create_task(record_from_scp(i, 1))
             else:
-                task = asyncio.create_task(record_microphone())
-            task3 = asyncio.create_task(message(str(id) + "_" + str(i)))  # processid+fileid
-            await asyncio.gather(task, task3)
-    exit(0)
+                task = asyncio.create_task(record_microphone())     #走麦克风实时录制和发送
+            task3 = asyncio.create_task(message(str(id) + "_" + str(i)))  # processid+fileid    接收服务端结果
+            await asyncio.gather(task, task3)   # 并发执行任务
+    exit(0) #只有真正结束的时候才会结束
 
 
 def one_thread(id, chunk_begin, chunk_size):
@@ -347,7 +349,7 @@ def one_thread(id, chunk_begin, chunk_size):
 
 
 if __name__ == "__main__":
-    # for microphone
+    # for microphone，直接开个线程一直跑着话筒输入
     if args.audio_in is None:
         p = Process(target=one_thread, args=(0, 0, 0))
         p.start()
