@@ -198,7 +198,7 @@ async def ws_serve(websocket, path):
                     frames_asr_online.append(message)
                     websocket.status_dict_asr_online["is_final"] = speech_end_i != -1   #speech_end_i没有结束就一直循环，结束了再赋值为true
                     if (
-                        len(frames_asr_online) % websocket.chunk_interval == 0
+                        len(frames_asr_online) % websocket.chunk_interval == 0  #是固定帧数就识别一次
                         or websocket.status_dict_asr_online["is_final"]     #结束输入了
                     ):
                         print("结束流式输入数据，开始进行流式识别(流1)")

@@ -279,7 +279,7 @@ async def message(id):
             if "mode" not in meg:
                 continue
             if meg["mode"] == "online":
-                text_print += "{}".format(text)
+                text_print += "{}".format(text) #空的帧直接返回回来拼接到后面不显示
                 text_print = text_print[-args.words_max_print :]
                 os.system("clear")
                 print("\rpid" + str(id) + ": " + text_print)    #打印从服务端接受的信息
@@ -302,7 +302,7 @@ async def message(id):
                     text_print = text_print_2pass_offline + "{}".format(text)
                     text_print_2pass_offline += "{}".format(text)
                 text_print = text_print[-args.words_max_print :]
-                os.system("clear")
+                os.system("clear")  # 清屏，换成非流式的数据输出到屏幕上
                 print("\rpid" + str(id) + ": " + text_print)
                 # offline_msg_done=True
 
@@ -337,7 +337,7 @@ async def ws_client(id, chunk_begin, chunk_size):
             if args.audio_in is not None:
                 task = asyncio.create_task(record_from_scp(i, 1))
             else:
-                task = asyncio.create_task(record_microphone())     #走麦克风实时录制和发送
+                task = asyncio.create_task(record_microphone())     #走麦克风实时录制和发送，不管流式还是非流式，都是攒够一个块的帧数就发送，然后休息0.005秒等待结果，相当于流式非流式决定权在服务端，流式就是固定块大小就返回结果，非流式就是等到结束符号再返回结果
             task3 = asyncio.create_task(message(str(id) + "_" + str(i)))  # processid+fileid    接收服务端结果
             await asyncio.gather(task, task3)   # 并发执行任务
     exit(0) #只有真正结束的时候才会结束
