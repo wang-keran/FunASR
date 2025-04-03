@@ -185,7 +185,7 @@ async def ws_serve(websocket, path):
                     websocket.mode = messagejson["mode"]
 
             websocket.status_dict_vad["chunk_size"] = int(
-                websocket.status_dict_asr_online["chunk_size"][1] * 60 / websocket.chunk_interval   # VAD块比正常块小，因为不需要大块进行识别，只需要检测语音，速度快省资源
+                websocket.status_dict_asr_online["chunk_size"][1] * 60 / websocket.chunk_interval   # VAD块比正常块大，因为不需要大块进行识别，但是需要检测语音怕漏语音，减少计算量增加精准性，所以需要更大的上下文，速度快省资源
             )
             if len(frames_asr_online) > 0 or len(frames_asr) >= 0 or not isinstance(message, str):
                 if not isinstance(message, str):    #是二进制音频的情况下
