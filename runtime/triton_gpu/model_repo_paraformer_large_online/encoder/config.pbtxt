@@ -21,6 +21,14 @@ default_model_filename: "model.onnx"
 
 max_batch_size: 128
 
+parameters: {   #这里限制线程数量为4
+  key: "intra_op_thread_count"
+  value: { string_value: "4" }
+},
+parameters: {
+  key: "inter_op_thread_count"
+  value: { string_value: "2" }
+}
 
 sequence_batching{
     max_sequence_idle_microseconds: 15000000

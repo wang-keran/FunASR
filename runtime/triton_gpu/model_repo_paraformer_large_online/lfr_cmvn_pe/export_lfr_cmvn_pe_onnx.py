@@ -7,7 +7,7 @@ import math
 import torch.nn.functional as F
 
 
-class LFR_CMVN_PE(torch.nn.Module):
+class LFR_CMVN_PE(torch.nn.Module): # 降低采样（减少维度），归一化，位置编码（增强时间依赖度）
     def __init__(
         self,
         mean: torch.Tensor,

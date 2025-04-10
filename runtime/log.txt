@@ -1,0 +1,2 @@
+run_server_2pass.sh: 第 28 行：cd: /workspace/FunASR/runtime/websocket/build/bin: 没有那个文件或目录
+run_server_2pass.sh:行30: /workspace/FunASR/runtime/websocket/build/bin/funasr-wss-server-2pass: 没有那个文件或目录

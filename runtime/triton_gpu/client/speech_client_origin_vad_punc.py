@@ -80,13 +80,15 @@ class StreamingSpeechClient(object):
     def recognize(self, wav_file, idx=0):
         waveform, sample_rate = sf.read(wav_file)
         wav_segs = []
+        full_result = []
+        former_stride = ""
         i = 0
         while i < len(waveform):
             if i == 0:
                 stride = int(self.first_chunk_in_secs * sample_rate)
                 wav_segs.append(waveform[i : i + stride])
             else:
-                stride = int(self.other_chunk_in_secs * sample_rate)
+                stride = int(self.other_chunk_in_secs * sample_rate)    #10240个采样点，在1秒中
                 wav_segs.append(waveform[i : i + stride])
             i += len(wav_segs[-1])
 
@@ -122,6 +124,22 @@ class StreamingSpeechClient(object):
             inputs[1].set_data_from_numpy(input1_data)
 
             outputs = [self.protocol_client.InferRequestedOutput("TRANSCRIPTS")]
+            outputs_vad1 = [self.protocol_client.InferRequestedOutput("start_time")]
+            outputs_vad2 = [self.protocol_client.InferRequestedOutput("end_time")]
+            response_vad = self.triton_client.infer(
+                self.model_name,
+                inputs,
+                outputs=outputs_vad1 + outputs_vad2,
+                sequence_id=sequence_id,
+                sequence_start=idx == 0,
+                sequence_end=end,
+            )
+            if response_vad.as_numpy("start_time")[0] == -1 == response_vad.as_numpy("end_time")[0] :
+                print("是空块")
+                if former_start == former_end == -1:
+                    continue
+                else:
+                    inputs_punc[0]
             end = False
             if idx == len(wav_segs) - 1:
                 end = True
@@ -137,4 +155,8 @@ class StreamingSpeechClient(object):
             idx += 1
             result = response.as_numpy("TRANSCRIPTS")[0].decode("utf-8")
             print("Get response from {}th chunk: {}".format(idx, result))
+            full_result.append(result)
+            former_stride = result
+            former_start = response_vad.as_numpy("start_time")[0]
+            former_end = response_vad.as_numpy("end_time")[0]
         return [result]

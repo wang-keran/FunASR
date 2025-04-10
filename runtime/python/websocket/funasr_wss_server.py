@@ -194,14 +194,14 @@ async def ws_serve(websocket, path):
                     websocket.vad_pre_idx += duration_ms
 
                     # asr online    流式就加到流式序列后面
-                    print("先给流式的音频组加上数据，不管是否为流式还是非流式(挂非1)")
+                    #print("先给流式的音频组加上数据，不管是否为流式还是非流式(挂非1)")
                     frames_asr_online.append(message)
                     websocket.status_dict_asr_online["is_final"] = speech_end_i != -1   #speech_end_i没有结束就一直循环，结束了再赋值为true
                     if (
                         len(frames_asr_online) % websocket.chunk_interval == 0  #是固定帧数就识别一次
                         or websocket.status_dict_asr_online["is_final"]     #结束输入了
                     ):
-                        print("结束流式输入数据，开始进行流式识别(流1)")
+                        #print("结束流式输入数据，开始进行流式识别(流1)")
                         if websocket.mode == "2pass" or websocket.mode == "online":
                             audio_in = b"".join(frames_asr_online)
                             try:
@@ -210,11 +210,11 @@ async def ws_serve(websocket, path):
                                 print(f"error in asr streaming, {websocket.status_dict_asr_online}")
                         frames_asr_online = []
                     if speech_start:
-                        print("如果是音频的开始，就添加这段音频进入asr的数据组（挂非2，挂非1，3，4运行了一会儿收到第一个音频的开始才运行了2，因为后面传递的不管是空音频还是实音频，都要运行一次），顺序就对了）")
+                        #print("如果是音频的开始，就添加这段音频进入asr的数据组（挂非2，挂非1，3，4运行了一会儿收到第一个音频的开始才运行了2，因为后面传递的不管是空音频还是实音频，都要运行一次），顺序就对了）")
                         frames_asr.append(message)
                     # vad online
                     try:
-                        print("开始进行语音是否存在的检测（挂非3）")
+                       # print("开始进行语音是否存在的检测（挂非3）")
                         speech_start_i, speech_end_i = await async_vad(websocket, message)
                     except:
                         print("error in vad")
@@ -258,14 +258,15 @@ async def ws_serve(websocket, path):
 
 async def async_vad(websocket, audio_in):
 
-    print("进入VAD语音检测（挂非4）")
-    segments_result = model_vad.generate(input=audio_in, **websocket.status_dict_vad)[0]["value"]
-    # print(segments_result)
+  #  print("进入VAD语音检测（挂非4）")
+   # print("vad_results is :", model_vad.generate(input=audio_in, **websocket.status_dict_vad))
+    segments_result = model_vad.generate(input=audio_in, **websocket.status_dict_vad)[0]["value"]   #这里去掉了key,只保留value原本的格式是：[{'key': 'rand_key_2zgyAVvWnS61Y', 'value': [[46770, -1]]}]
+    print(segments_result)  #输出的筛选后的结果是[[-1, 1160]]，音频片段模糊导致收不到开始或者结束位置
 
     speech_start = -1
     speech_end = -1
 
-    if len(segments_result) == 0 or len(segments_result) > 1:
+    if len(segments_result) == 0 or len(segments_result) > 1:   #返回值为空或者为-1
         return speech_start, speech_end
     if segments_result[0][0] != -1:
         speech_start = segments_result[0][0]
@@ -282,12 +283,13 @@ async def async_asr(websocket, audio_in):
         print("\n进来执行非流式识别（非7）\n")
         # print("offline_asr, ", rec_result)
         if model_punc is not None and len(rec_result["text"]) > 0:
-            # print("offline, before punc", rec_result, "cache", websocket.status_dict_punc)
+            print("offline, before punc", rec_result, "cache", websocket.status_dict_punc)
+            print("punc input is :", rec_result["text"])
             rec_result = model_punc.generate(
-                input=rec_result["text"], **websocket.status_dict_punc
+                input=rec_result["text"]    #, **websocket.status_dict_punc     #cache可以为空不输入上下文
             )[0]
             print("\n真正进行非流式推理的部分（非8）\n")
-            # print("offline, after punc", rec_result)
+            print("offline, after punc", rec_result)
         if len(rec_result["text"]) > 0:
             # print("offline", rec_result)
             print("\n进来执行非流式-----2pass------识别的返回值构建（非9）\n")
