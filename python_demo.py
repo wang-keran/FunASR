@@ -5,7 +5,7 @@ encoder_chunk_look_back = 4 #number of chunks to lookback for encoder self-atten
 decoder_chunk_look_back = 1 #number of encoder chunks to lookback for decoder cross-attention
 
 model = AutoModel(model="paraformer-zh-streaming")
-model_vad = AutoModel(model="ct-punc")
+model_punc = AutoModel(model="ct-punc")
 
 import soundfile
 import os
@@ -23,12 +23,12 @@ for i in range(total_chunk_num):
     is_final = i == total_chunk_num - 1
     res = model.generate(input=speech_chunk, cache=cache, is_final=is_final, chunk_size=chunk_size, encoder_chunk_look_back=encoder_chunk_look_back, decoder_chunk_look_back=decoder_chunk_look_back)
     print(res)
-    for item in res:
-        print_res=model_vad.generate(input=item['text'])
-        print(print_res)
-        pun_chunk_res=model_vad.generate(input=print_res)
-        full_res += pun_chunk_res
-    # print_res = model_vad.generate(input=full_res)
+    # for item in res:
+    #     print_res=model_punc.generate(input=item['text'])
+    #     print(print_res)
+    #     pun_chunk_res=model_punc.generate(input=print_res)
+    #     full_res += pun_chunk_res
+    # print_res = model_punc.generate(input=full_res)
     # print(print_res)
 #print_res=model_vad.generate(input=full_res)
 print(full_res)
