@@ -72,7 +72,7 @@ async def record_microphone():
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
-    chunk_size = 60 * args.chunk_size[1] / args.chunk_interval
+    chunk_size = 60 * args.chunk_size[1] / args.chunk_interval # 默认是60ms，100的时候自动输入无限循环，服务端都终止不了一直返回结果
     CHUNK = int(RATE / 1000 * chunk_size)
 
     p = pyaudio.PyAudio()   #初始化pyaudio类来读取话筒音

@@ -89,31 +89,42 @@ class CT_Transformer:
             self.seg_jieba = False
 
     def __call__(self, text: Union[list, str], split_size=20):
-        if self.seg_jieba:
+        if self.seg_jieba:  # 是否启用结巴分词
             split_text = self.code_mix_split_words_jieba(text)
         else:
             split_text = code_mix_split_words(text)
+        # 将分词后的文本转换成tokenID
         split_text_id = self.converter.tokens2ids(split_text)
+        # 切分成小句子
         mini_sentences = split_to_mini_sentence(split_text, split_size)
         mini_sentences_id = split_to_mini_sentence(split_text_id, split_size)
+        # 确保小句子的个数和tokenID的个数一致
         assert len(mini_sentences) == len(mini_sentences_id)
+        # 初始化缓存，存储上一个句子没有处理完成的部分
         cache_sent = []
         cache_sent_id = []
+        # 用于逐步构建当前句子及其标点符号。
         new_mini_sentence = ""
         new_mini_sentence_punc = []
         cache_pop_trigger_limit = 200
         for mini_sentence_i in range(len(mini_sentences)):
+            # 遍历每个小句，将其与缓存中的数据拼接起来
             mini_sentence = mini_sentences[mini_sentence_i]
             mini_sentence_id = mini_sentences_id[mini_sentence_i]
             mini_sentence = cache_sent + mini_sentence
             mini_sentence_id = np.array(cache_sent_id + mini_sentence_id, dtype="int32")
+            # 将 mini_sentence_id 转换为批量形式（增加一个维度），并记录其长度。
+            # data 是传递给模型的输入字典，包含两个键："text"：形状为 (1, n) 的 token ID 矩阵。"text_lengths"：形状为 (1,) 的长度数组。
             data = {
                 "text": mini_sentence_id[None, :],
                 "text_lengths": np.array([len(mini_sentence_id)], dtype="int32"),
             }
             try:
+                # 调用 infer 方法，将 data 传递给 ONNX 模型进行推理。
                 outputs = self.infer(data["text"], data["text_lengths"])
+                # 模型输出 y 是一个概率分布矩阵，表示每个位置的标点符号预测概率。
                 y = outputs[0]
+                # 使用 np.argmax 提取每个位置的最大概率对应的标点符号索引。
                 punctuations = np.argmax(y, axis=-1)[0]
                 assert punctuations.size == len(mini_sentence)
             except ONNXRuntimeError:
@@ -121,6 +132,7 @@ class CT_Transformer:
 
             # Search for the last Period/QuestionMark as cache
             if mini_sentence_i < len(mini_sentences) - 1:
+                # 从后向前遍历标点符号，查找句子的结束位置（如句号或问号）。
                 sentenceEnd = -1
                 last_comma_index = -1
                 for i in range(len(punctuations) - 2, 1, -1):
@@ -130,6 +142,7 @@ class CT_Transformer:
                     ):
                         sentenceEnd = i
                         break
+                    # 如果未找到结束位置且句子过长，则以逗号作为分割点。
                     if last_comma_index < 0 and self.punc_list[punctuations[i]] == "，":
                         last_comma_index = i
 
@@ -141,6 +154,7 @@ class CT_Transformer:
                     # The sentence it too long, cut off at a comma.
                     sentenceEnd = last_comma_index
                     punctuations[sentenceEnd] = self.period
+                # 将未处理完的部分（如未结束的标点符号）保存到缓存中，供下一个小句使用。
                 cache_sent = mini_sentence[sentenceEnd + 1 :]
                 cache_sent_id = mini_sentence_id[sentenceEnd + 1 :].tolist()
                 mini_sentence = mini_sentence[0 : sentenceEnd + 1]
@@ -148,6 +162,7 @@ class CT_Transformer:
 
             new_mini_sentence_punc += [int(x) for x in punctuations]
             words_with_punc = []
+            # 遍历当前小句的每个单词，根据预测的标点符号索引添加对应的标点符号。
             for i in range(len(mini_sentence)):
                 if i > 0:
                     if (
@@ -156,12 +171,14 @@ class CT_Transformer:
                     ):
                         mini_sentence[i] = " " + mini_sentence[i]
                 words_with_punc.append(mini_sentence[i])
+                # _ 表示无标点符号。
                 if self.punc_list[punctuations[i]] != "_":
                     words_with_punc.append(self.punc_list[punctuations[i]])
             new_mini_sentence += "".join(words_with_punc)
             # Add Period for the end of the sentence
             new_mini_sentence_out = new_mini_sentence
             new_mini_sentence_punc_out = new_mini_sentence_punc
+            # 处理最后一个句子，如果是最后一个句子，确保其以句号或问号结尾。
             if mini_sentence_i == len(mini_sentences) - 1:
                 if new_mini_sentence[-1] == "，" or new_mini_sentence[-1] == "、":
                     new_mini_sentence_out = new_mini_sentence[:-1] + "。"

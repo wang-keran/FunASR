@@ -28,7 +28,7 @@ for i in range(total_chunk_num):
     #     print(print_res)
     #     pun_chunk_res=model_punc.generate(input=print_res)
     #     full_res += pun_chunk_res
-    # print_res = model_punc.generate(input=full_res)
+    # print_res = model_punc.generate(input=full_res)   # 这个模型的.pt文件中只含有参数，没有推理框架，使用pt_input_output测试过
     # print(print_res)
 #print_res=model_vad.generate(input=full_res)
 print(full_res)
