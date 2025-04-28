@@ -250,9 +250,9 @@ class TritonPythonModel:
                 raise pb_utils.TritonModelException(inference_response.error().message())
             else:
                 sample_ids = pb_utils.get_output_tensor_by_name(inference_response, "sample_ids")
-                token_ids = from_dlpack(sample_ids.to_dlpack()).cpu().numpy()[0]
+                token_ids = from_dlpack(sample_ids.to_dlpack()).cpu().numpy()[0]    # 转换成tokens帧的id
 
-                # Change integer-ids to tokens
+                # Change integer-ids to tokens tokens_id对应词表生成文字
                 tokens = [self.vocab_dict[token_id] for token_id in token_ids]
                 batch_result[index_corrid] = "".join(tokens)
 

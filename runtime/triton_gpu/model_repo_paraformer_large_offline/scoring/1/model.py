@@ -134,6 +134,8 @@ class TritonPythonModel:
         yseq_batch = logits_batch.argmax(axis=-1).tolist()
         token_int_batch = [list(filter(lambda x: x not in (0, 2), yseq)) for yseq in yseq_batch]
 
+        # 在这里可以加上punc模型，直接batch_size=1,feat_length是token_int_batch
+
         tokens_batch = [[self.vocab_dict[i] for i in token_int] for token_int in token_int_batch]
 
         hyps = [

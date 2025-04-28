@@ -21,21 +21,21 @@ default_model_filename: "model.onnx"
 
 max_batch_size: 128
 
-parameters: {   #这里限制线程数量为4
+parameters: {   #这里限制线程数量为4，最多使用4个线程
   key: "intra_op_thread_count"
   value: { string_value: "4" }
 },
-parameters: {
+parameters: { #表示最多允许 2 个操作并行执行。
   key: "inter_op_thread_count"
   value: { string_value: "2" }
 }
 
 sequence_batching{
-    max_sequence_idle_microseconds: 15000000
+    max_sequence_idle_microseconds: 15000000  # 最长等15秒就结束
     oldest {
-      max_candidate_sequences: 1024
-      preferred_batch_size: [32, 64, 128]
-      max_queue_delay_microseconds: 300
+      max_candidate_sequences: 1024   # 限制 Triton 在内存中最多可以保留的候选序列数为 1024。
+      preferred_batch_size: [32, 64, 128]   # 指定优先的批量大小。Triton 会尝试将多个序列的请求合并为这些大小的批次，以提高推理效率。
+      max_queue_delay_microseconds: 300   # 设置队列的最大延迟时间为 300 微秒。如果在该时间内无法凑齐一个完整批次，则 Triton 会立即处理当前已有的请求。
     }
     control_input [
     ]
@@ -77,7 +77,7 @@ output [
   }
 ]
 
-parameters { key: "cudnn_conv_algo_search" value: { string_value: "2" } }
+parameters { key: "cudnn_conv_algo_search" value: { string_value: "2" } } #这是选择cudnn的推理方式，1是先测各种卷积方式的耗时再选最好的，2是根据输入形状和硬件特性不测耗时快速选择一个算法，0是cudnn自动决定搜索策略，CPU时不起作用
 
 instance_group [
     {

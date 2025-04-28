@@ -6,9 +6,11 @@ import os
 #model_path = "/home/wangkeran/桌面/WENET/aishellout-streaming/encoder.onnx"
 #model_path = "/home/wangkeran/桌面/WENET/aishellout-non-streaming/encoder.onnx"
 #model_path = "/home/wangkeran/桌面/WENET/gpu_cpu_non_streaming/encoder_fp16.onnx"
-model_path = "/home/wangkeran-v10-2503-hwe/.cache/modelscope/hub/models/iic/punc_ct-transformer_zh-cn-common-vocab272727-onnx/model_quant.onnx"
+#model_path = "/home/wangkeran-v10-2503-hwe/.cache/modelscope/hub/models/iic/punc_ct-transformer_zh-cn-common-vocab272727-onnx/model_quant.onnx"
 #model_path = "/home/wangkeran-v10-2503-hwe/桌面/code/sherpa-onnx/python-api-examples/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12/model.onnx"
 #model_path = "/home/wangkeran/桌面/WENET/gpu_cpu_english_streaming/encoder_fp16.onnx"
+#model_path = "/home/wangkeran-v10-2503-hwe/.cache/modelscope/hub/models/iic/speech_fsmn_vad_zh-cn-16k-common-onnx/model_quant.onnx"
+model_path = "/home/wangkeran-v10-2503-hwe/.cache/modelscope/hub/models/iic/punc_ct-transformer_zh-cn-common-vocab272727-onnx/model_quant.onnx"
 print("模型路径：",model_path)
 
 # 检查模型文件是否存在

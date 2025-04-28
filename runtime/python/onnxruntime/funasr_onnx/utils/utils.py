@@ -256,7 +256,7 @@ class OrtInferSession:
             raise FileExistsError(f"{model_path} is not a file.")
 
 
-def split_to_mini_sentence(words: list, word_limit: int = 20):
+def split_to_mini_sentence(words: list, word_limit: int = 20):  # 20个单词为一个句子，或20个汉字分成一个句子
     assert word_limit > 1
     if len(words) <= word_limit:
         return [words]

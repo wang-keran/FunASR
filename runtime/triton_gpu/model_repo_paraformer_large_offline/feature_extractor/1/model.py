@@ -203,7 +203,7 @@ class TritonPythonModel:
         """
         self.model_config = model_config = json.loads(args["model_config"])
         self.max_batch_size = max(model_config["max_batch_size"], 1)
-        self.device = "cuda"
+        self.device = "cpu"        # self.device = "cuda"   原来是只能cuda
 
         # Get OUTPUT0 configuration
         output0_config = pb_utils.get_output_config_by_name(model_config, "speech")
