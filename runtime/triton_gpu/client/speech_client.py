@@ -17,6 +17,7 @@ import numpy as np
 import math
 import soundfile as sf
 import time
+from funasr import AutoModel
 
 total_audio_time = 0
 total_asr_time = 0
@@ -72,6 +73,19 @@ class OfflineSpeechClient(object):
         total_audio_time += audio_duration
         total_asr_time += elapsed_time
         print(f"累计总音频时长: {total_audio_time} 秒, 累计语音识别耗时时长: {total_asr_time} 秒")
+        print("result is :",result)
+        # 这里直接使用automodel加载模型，这是pt模型应该是，onnx模型做法不同但是这个写起来快
+        #start_time = time.time()
+        punc_model=AutoModel(model="ct-punc")
+        #end_time = time.time()
+        #elapsed_time = end_time - start_time
+        #print(f"加载模型耗时: {elapsed_time} 秒")
+        start_time = time.time()
+        res = punc_model.generate(input=result)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"模型推理耗时: {elapsed_time} 秒")
+        print("punc result is :",res)
         return [result]
 
 

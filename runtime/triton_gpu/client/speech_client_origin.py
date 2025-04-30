@@ -53,6 +53,7 @@ class OfflineSpeechClient(object):
             outputs=outputs,
         )
         result = response.as_numpy("TRANSCRIPTS")[0].decode("utf-8")
+        print("result is :",result[0])
         return [result]
 
 

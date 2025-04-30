@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: "feature_extractor"
+name: "feature_extractor_offline"
 backend: "python"
 max_batch_size: 64
 
@@ -35,11 +35,11 @@ parameters [
   },
   {
     key: "cmvn_path"
-    value: { string_value: "./model_repo_paraformer_large_offline/feature_extractor/am.mvn"}
+    value: { string_value: "./model_repo_paraformer_large_2pass/feature_extractor_offline/am.mvn"}
   },
   {
     key: "config_path"
-    value: { string_value: "./model_repo_paraformer_large_offline/feature_extractor/config.yaml"}
+    value: { string_value: "./model_repo_paraformer_large_2pass/feature_extractor_offline/config.yaml"}
   }
 
 ]
@@ -76,6 +76,6 @@ dynamic_batching {
 instance_group [
     {
       count: 2
-      kind: KIND_CPU  # KIND_GPU
+      kind: KIND_CPU
     }
 ]

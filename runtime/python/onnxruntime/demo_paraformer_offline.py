@@ -9,7 +9,9 @@ model = Paraformer(model_dir, batch_size=1, quantize=False)
 # when using paraformer-large-vad-punc model, you can set plot_timestamp_to="./xx.png" to get figure of alignment besides timestamps
 # model = Paraformer(model_dir, batch_size=1, plot_timestamp_to="test.png")
 
-wav_path = ["{}/.cache/modelscope/hub/{}/example/asr_example.wav".format(Path.home(), model_dir)]
+wav_path = ["{}/.cache/modelscope/hub/models/{}/example/asr_example.wav".format(Path.home(), model_dir)]
 
 result = model(wav_path)
 print(result)
+
+# speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch/example

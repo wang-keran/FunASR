@@ -45,7 +45,7 @@ if __name__ == "__main__":
         "--model_name",
         required=False,
         default="attention_rescoring",
-        choices=["attention_rescoring", "streaming_wenet", "infer_pipeline", "sensevoice","streaming_paraformer"],
+        choices=["attention_rescoring", "streaming_wenet", "infer_pipeline", "sensevoice","streaming_paraformer","paraformer"],
         help="the model to send request to",
     )
     parser.add_argument(
@@ -174,8 +174,8 @@ if __name__ == "__main__":
         with grpcclient.InferenceServerClient(
                 url=FLAGS.url, verbose=FLAGS.verbose) as triton_client:
             protocol_client = grpcclient
-            triton_client.load_model("decoder")
-            triton_client.load_model(FLAGS.model_name)
+            triton_client.load_model("decoder")    # 只有仓库里含有这个模型并且esemble没有加载的时候才需要单独提出来
+            triton_client.load_model(FLAGS.model_name)     #有explicit参数的时候才能使用这个命令加载模型，否则会报错
             speech_client = speech_client_cls(triton_client, FLAGS.model_name,
                                               protocol_client, FLAGS)
             idx, audio_files = client_files
@@ -201,7 +201,7 @@ if __name__ == "__main__":
         predictions = pool.map(single_job, tasks)
 
     predictions = [item for sublist in predictions for item in sublist]
-    #print("predictions is: {}",predictions)
+    print("predictions[0] is: {}",predictions[0])
     if transcripts:
         cer = cal_cer(predictions, transcripts)
         print("CER is: {}".format(cer))

@@ -3,7 +3,7 @@ from funasr import AutoModel
 
 model = AutoModel(
     #model="iic/emotion2vec_base",
-    model="paraformer-zh-streaming",    #paraformer-zh是非流式的版本
+    model="paraformer-zh-streaming",    #paraformer-zh是非流式的版本    paraformer-zh-streaming
     hub="ms"    #从model scope下载模型
 )
 

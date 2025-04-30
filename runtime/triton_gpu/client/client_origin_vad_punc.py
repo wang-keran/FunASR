@@ -161,7 +161,7 @@ if __name__ == "__main__":
             url=FLAGS.url, verbose=FLAGS.verbose
         ) as triton_client:
             protocol_client = grpcclient
-            triton_client.load_model("decoder")                 #只要使用了一次，把模型加载起来后就不需要这两个load_model了
+            # triton_client.load_model("decoder")                 #只要使用了一次，把模型加载起来后就不需要这两个load_model了
             triton_client.load_model(FLAGS.model_name)
             speech_client = speech_client_cls(
                 triton_client, FLAGS.model_name, protocol_client, FLAGS

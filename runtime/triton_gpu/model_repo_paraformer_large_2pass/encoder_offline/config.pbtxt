@@ -12,70 +12,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: "feature_extractor"
-backend: "python"
+name: "encoder_offline"
+backend: "onnxruntime"
+default_model_filename: "model.onnx"
+
 max_batch_size: 64
-
-parameters [
-  {
-    key: "num_mel_bins",
-    value: { string_value: "80"}
-  },
-  {
-    key: "frame_shift_in_ms"
-    value: { string_value: "10"}
-  },
-  {
-    key: "frame_length_in_ms"
-    value: { string_value: "25"}
-  },
-  {
-    key: "sample_rate"
-    value: { string_value: "16000"}
-  },
-  {
-    key: "cmvn_path"
-    value: { string_value: "./model_repo_paraformer_large_offline/feature_extractor/am.mvn"}
-  },
-  {
-    key: "config_path"
-    value: { string_value: "./model_repo_paraformer_large_offline/feature_extractor/config.yaml"}
-  }
-
-]
 
 input [
   {
-    name: "wav"
-    data_type: TYPE_FP32
-    dims: [-1]
-  },
-  {
-    name: "wav_lens"
-    data_type: TYPE_INT32
-    dims: [1]
-  }
-]
-
-output [
-  {
     name: "speech"
     data_type: TYPE_FP32
-    dims: [-1, 560]  # 80
+    dims: [-1, 560]
   },
   {
     name: "speech_lengths"
     data_type: TYPE_INT32
     dims: [1]
+    reshape: { shape: [ ] }
+  }
+]
+
+output [
+  {
+    name: "logits"
+    data_type: TYPE_FP32
+    dims: [-1, 8404] 
+  },
+  {
+    name: "token_num"
+    data_type: TYPE_INT32
+    dims: [1]
+    reshape: { shape: [ ] }
   }
 ]
 
 dynamic_batching {
+    preferred_batch_size: [ 2,4,8,16,32,64 ]
+    max_queue_delay_microseconds: 500
   }
+
+parameters { key: "cudnn_conv_algo_search" value: { string_value: "2" } }
 
 instance_group [
     {
-      count: 2
-      kind: KIND_CPU  # KIND_GPU
+      count: 1
+      kind: KIND_CPU  # KIND_GPU or KIND_CPU
     }
 ]
+

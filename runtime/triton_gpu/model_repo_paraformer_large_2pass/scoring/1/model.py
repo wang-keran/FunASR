@@ -138,11 +138,11 @@ class TritonPythonModel:
 
         tokens_batch = [[self.vocab_dict[i] for i in token_int] for token_int in token_int_batch]
 
-         # 在这里输出结果才对
+        # 在这里输出结果才对
         for tokens in tokens_batch:
             print("tokens is :",tokens)
-            
-        hyps = [# 这里是编码了所以打印不出来
+
+        hyps = [    # 这里是编码了所以打印不出来
             "".join([t if t != "<space>" else " " for t in tokens]).encode("utf-8")
             for tokens in tokens_batch
         ]

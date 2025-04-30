@@ -12,70 +12,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: "feature_extractor"
+name: "scoring"
 backend: "python"
 max_batch_size: 64
 
 parameters [
   {
-    key: "num_mel_bins",
-    value: { string_value: "80"}
+    key: "ignore_id",
+    value: { string_value: "-1"}
   },
   {
-    key: "frame_shift_in_ms"
-    value: { string_value: "10"}
+    key: "vocabulary",
+    value: { string_value: "./model_repo_paraformer_large_2pass/scoring/1/tokens.json"}
   },
   {
-    key: "frame_length_in_ms"
-    value: { string_value: "25"}
+    key: "lm_path"
+    value: { string_value: "#lm_path"}
   },
-  {
-    key: "sample_rate"
-    value: { string_value: "16000"}
-  },
-  {
-    key: "cmvn_path"
-    value: { string_value: "./model_repo_paraformer_large_offline/feature_extractor/am.mvn"}
-  },
-  {
-    key: "config_path"
-    value: { string_value: "./model_repo_paraformer_large_offline/feature_extractor/config.yaml"}
+  { key: "FORCE_CPU_ONLY_INPUT_TENSORS" 
+    value: {string_value:"no"}
   }
-
 ]
+
 
 input [
   {
-    name: "wav"
+    name: "logits"
     data_type: TYPE_FP32
-    dims: [-1]
+    dims: [-1, 8404]
   },
   {
-    name: "wav_lens"
+    name: "token_num"
     data_type: TYPE_INT32
     dims: [1]
+    reshape: { shape: [ ] }
   }
 ]
 
 output [
   {
-    name: "speech"
-    data_type: TYPE_FP32
-    dims: [-1, 560]  # 80
-  },
-  {
-    name: "speech_lengths"
-    data_type: TYPE_INT32
+    name: "OUTPUT0"
+    data_type: TYPE_STRING
     dims: [1]
   }
 ]
 
 dynamic_batching {
   }
-
 instance_group [
     {
       count: 2
-      kind: KIND_CPU  # KIND_GPU
+      kind: KIND_CPU
     }
-]
+  ]
