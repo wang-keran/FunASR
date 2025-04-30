@@ -160,22 +160,6 @@ if __name__ == "__main__":
     speech_client_cls_streaming = StreamingSpeechClient
     speech_client_cls_offline = OfflineSpeechClient
 
-    # def single_job(client_files):
-    #     with grpcclient.InferenceServerClient(
-    #         url=FLAGS.url, verbose=FLAGS.verbose
-    #     ) as triton_client:
-    #         protocol_client = grpcclient
-    #         # triton_client.load_model("decoder")       # 只要使用了一次，把模型加载起来后就不需要这两个load_model了
-    #         triton_client.load_model(FLAGS.model_name)
-    #         speech_client = speech_client_cls(
-    #             triton_client, FLAGS.model_name, protocol_client, FLAGS
-    #         )
-    #         idx, audio_files = client_files
-    #         predictions = []
-    #         for li in audio_files:
-    #             result = speech_client.recognize(li, idx)
-    #             print("Recognized {}:{}".format(li, result[0]))
-    #             predictions += result
     #     return predictions
     def single_job(client_files):
         with grpcclient.InferenceServerClient(
