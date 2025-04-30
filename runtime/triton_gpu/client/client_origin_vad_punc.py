@@ -156,15 +156,47 @@ if __name__ == "__main__":
     else:
         speech_client_cls = OfflineSpeechClient
 
+    # 这里是流式和非流式的调用对象
+    speech_client_cls_streaming = StreamingSpeechClient
+    speech_client_cls_offline = OfflineSpeechClient
+
+    # def single_job(client_files):
+    #     with grpcclient.InferenceServerClient(
+    #         url=FLAGS.url, verbose=FLAGS.verbose
+    #     ) as triton_client:
+    #         protocol_client = grpcclient
+    #         # triton_client.load_model("decoder")       # 只要使用了一次，把模型加载起来后就不需要这两个load_model了
+    #         triton_client.load_model(FLAGS.model_name)
+    #         speech_client = speech_client_cls(
+    #             triton_client, FLAGS.model_name, protocol_client, FLAGS
+    #         )
+    #         idx, audio_files = client_files
+    #         predictions = []
+    #         for li in audio_files:
+    #             result = speech_client.recognize(li, idx)
+    #             print("Recognized {}:{}".format(li, result[0]))
+    #             predictions += result
+    #     return predictions
     def single_job(client_files):
         with grpcclient.InferenceServerClient(
             url=FLAGS.url, verbose=FLAGS.verbose
         ) as triton_client:
             protocol_client = grpcclient
-            # triton_client.load_model("decoder")                 #只要使用了一次，把模型加载起来后就不需要这两个load_model了
-            triton_client.load_model(FLAGS.model_name)
-            speech_client = speech_client_cls(
-                triton_client, FLAGS.model_name, protocol_client, FLAGS
+            triton_client.load_model("decoder")       # 只要使用了一次，把模型加载起来后就不需要这两个load_model了
+            triton_client.load_model("streaming_paraformer")
+            speech_client = speech_client_cls_streaming(
+                triton_client, "streaming_paraformer", protocol_client, FLAGS   # 这里的参数原来跟着Flags走的，现在直接写死了流式非流式
+            )
+            idx, audio_files = client_files
+            predictions = []
+            for li in audio_files:
+                result = speech_client.recognize(li, idx)
+                print("Recognized {}:{}".format(li, result[0]))
+                predictions += result
+            print("----------------------------------流式识别结束，开始非流式识别和加标点功能-----------------------------------")
+            triton_client.load_model("infer_pipeline")
+            speech_client = speech_client_cls_offline(
+                triton_client, "infer_pipeline", protocol_client, FLAGS
             )
             idx, audio_files = client_files
             predictions = []
