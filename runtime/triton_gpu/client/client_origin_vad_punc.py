@@ -19,7 +19,7 @@ import argparse
 import os
 import tritonclient.grpc as grpcclient
 from utils import cal_cer
-from speech_client import *
+from speech_client_origin_vad_punc import *
 import numpy as np
 
 if __name__ == "__main__":
