@@ -71,7 +71,7 @@ class CT_Transformer:
         self.ort_infer = OrtInferSession(
             model_file, device_id, intra_op_num_threads=intra_op_num_threads
         )
-        self.batch_size = 1
+        self.batch_size = 1 #这里在triton仓库中没加
         self.punc_list = config["model_conf"]["punc_list"]
         self.period = 0
         for i in range(len(self.punc_list)):
@@ -106,11 +106,12 @@ class CT_Transformer:
         # 用于逐步构建当前句子及其标点符号。
         new_mini_sentence = ""
         new_mini_sentence_punc = []
-        cache_pop_trigger_limit = 200
+        cache_pop_trigger_limit = 200   #单位是token,比如一个token有"你好”，那可以有200个最多这种没有标点的token，既400字
         for mini_sentence_i in range(len(mini_sentences)):
             # 遍历每个小句，将其与缓存中的数据拼接起来
             mini_sentence = mini_sentences[mini_sentence_i]
             mini_sentence_id = mini_sentences_id[mini_sentence_i]
+            print("cache_sent is: ",cache_sent)
             mini_sentence = cache_sent + mini_sentence
             mini_sentence_id = np.array(cache_sent_id + mini_sentence_id, dtype="int32")
             # 将 mini_sentence_id 转换为批量形式（增加一个维度），并记录其长度。
@@ -207,6 +208,7 @@ class CT_Transformer_VadRealtime(CT_Transformer):
         cache_key = "cache"
         assert cache_key in param_dict
         cache = param_dict[cache_key]
+        print("缓存中的数据是:",cache)
         if cache is not None and len(cache) > 0:
             precache = "".join(cache)
         else:

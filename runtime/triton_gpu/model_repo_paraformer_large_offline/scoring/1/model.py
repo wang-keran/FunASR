@@ -22,6 +22,15 @@ from torch.utils.dlpack import from_dlpack
 import json
 import os
 import yaml
+# 在这里加上utils.py文件包含的各种工具，直接使用
+from utils import ONNXRuntimeError, OrtInferSession, get_logger, read_yaml
+from utils import (TokenIDConverter,
+    split_to_mini_sentence,
+    code_mix_split_words,
+    print_hello,
+    )
+
+logging = get_logger()
 
 
 class TritonPythonModel:
@@ -55,6 +64,7 @@ class TritonPythonModel:
 
         self.init_vocab(self.model_config["parameters"])
 
+        
     def init_vocab(self, parameters):
         blank_id = 0
         for li in parameters.items():
@@ -141,6 +151,10 @@ class TritonPythonModel:
          # 在这里输出结果才对
         for tokens in tokens_batch:
             print("tokens is :",tokens)
+        all_tokens = "".join(tokens)    # 这个就是整个字符串，没有引号或者中括号的那种，接入模型即可
+        print(all_tokens)
+        # 这里增加添加标点的操作
+
             
         hyps = [# 这里是编码了所以打印不出来
             "".join([t if t != "<space>" else " " for t in tokens]).encode("utf-8")

@@ -12,51 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: "encoder"
-backend: "onnxruntime"
-default_model_filename: "model.onnx"
-
+name: "use_punc"
+backend: "python"
 max_batch_size: 64
+
 
 input [
   {
-    name: "speech"
-    data_type: TYPE_FP32
-    dims: [-1, 560]
-  },
-  {
-    name: "speech_lengths"
-    data_type: TYPE_INT32
+    name: "text_no_punc"
+    data_type: TYPE_STRING
     dims: [1]
-    reshape: { shape: [ ] }
   }
 ]
 
 output [
   {
-    name: "logits"
-    data_type: TYPE_FP32
-    dims: [-1, 8404] 
-  },
-  {
-    name: "token_num"
-    data_type: TYPE_INT32
+    name: "OUTPUT0"
+    data_type: TYPE_STRING
     dims: [1]
-    reshape: { shape: [ ] }
   }
 ]
 
 dynamic_batching {
-    preferred_batch_size: [ 2,4,8,16,32,64 ]
-    max_queue_delay_microseconds: 500
   }
-
-parameters { key: "cudnn_conv_algo_search" value: { string_value: "2" } }
-
 instance_group [
     {
-      count: 1
-      kind: KIND_CPU  # KIND_GPU or KIND_CPU
+      count: 2
+      kind: KIND_CPU
     }
-]
-
+  ]
