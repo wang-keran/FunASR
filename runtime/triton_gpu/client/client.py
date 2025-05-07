@@ -175,8 +175,7 @@ if __name__ == "__main__":
                 url=FLAGS.url, verbose=FLAGS.verbose) as triton_client:
             protocol_client = grpcclient
             # triton_client.load_model("decoder")    # 只有仓库里含有这个模型并且esemble没有加载的时候才需要单独提出来，只需要在发送请求前把所有需要的模型加载起来即可，不需要管它的顺序
-            # triton_client.load_model(FLAGS.model_name)     #有explicit参数的时候才能使用这个命令加载模型，否则会报错
-            # triton_client.load_model("punc")        # 前后加载punc都能加载模型
+            triton_client.load_model(FLAGS.model_name)     #有explicit参数的时候才能使用这个命令加载模型，否则会报错
             speech_client = speech_client_cls(triton_client, FLAGS.model_name,
                                               protocol_client, FLAGS)
             idx, audio_files = client_files

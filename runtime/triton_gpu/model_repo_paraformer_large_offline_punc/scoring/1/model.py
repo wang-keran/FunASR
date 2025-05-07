@@ -72,6 +72,8 @@ class TritonPythonModel:
             elif self.punc_list[i] == "。":
                 self.period = i
         # print("添加逗号的词表成功")
+        # 这里加载起来模型，可以不用每次使用都加载一次
+        pb_utils.load_model("punc")
 
     def init_vocab(self, parameters):
         blank_id = 0
