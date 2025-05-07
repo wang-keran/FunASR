@@ -131,7 +131,7 @@ class TritonPythonModel:
             total_seq += 1
 
     
-        all_tokens=text_no_punc_list[0]
+        all_tokens="".join(text_no_punc_list)
         # print("all tokens is :",all_tokens)
         # 这里增加添加标点的操作
         split_size=20

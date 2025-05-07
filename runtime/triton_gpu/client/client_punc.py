@@ -9,9 +9,12 @@ import tritonclient.grpc as grpcclient
 
 # 连接到 Triton Server（默认 gRPC 端口是 8001）
 client = grpcclient.InferenceServerClient(url="localhost:8001")
+client.load_model("punc")       # 这里两个模型先后顺序无所谓，都能正常加载起来，只要在发送请求前加载模型即可
+client.load_model("use_punc")
+# client.load_model("punc")
 
 # 构造输入数据
-input_text = ["你好世界"]  # 可以传入多个句子，batch_size <= 64
+input_text = ["你好世界","希望比失望更多人才能活得下去","为什么呢"]  # 可以传入多个句子，batch_size <= 64
 batch_size = len(input_text)
 
 # 确保输入是二维数组：shape = [batch_size, 1]
